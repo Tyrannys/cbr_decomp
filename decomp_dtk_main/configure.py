@@ -118,10 +118,10 @@ if not is_windows():
     config.wrapper = args.wrapper
 
 # Tool versions
-config.compilers_tag = "20231018"
-config.dtk_tag = "v0.6.2"
-config.sjiswrap_tag = "v1.1.1"
-config.wibo_tag = "0.6.9"
+config.compilers_tag = "20251118"
+config.dtk_tag = "v1.8.3"
+config.sjiswrap_tag = "v1.2.1"
+config.wibo_tag = "0.6.16"
 config.asflags = [
     "-mgekko",
     "--strip-local-absolute",
