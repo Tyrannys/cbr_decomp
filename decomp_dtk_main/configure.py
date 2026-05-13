@@ -19,7 +19,6 @@ import argparse
 from pathlib import Path
 from tools.project import (
     Object,
-    ProgressCategory,
     ProjectConfig,
     calculate_progress,
     generate_build,
@@ -83,22 +82,10 @@ if not is_windows():
         help="path to wibo or wine (optional)",
     )
 parser.add_argument(
-    "--dtk",
-    dest="dtk",
+    "--build-dtk",
+    dest="build_dtk",
     type=Path,
-    help="path to decomp-toolkit binary or source (optional)",
-)
-parser.add_argument(
-    "--objdiff",
-    dest="objdiff",
-    type=Path,
-    help="path to objdiff-cli binary or source (optional)",
-)
-parser.add_argument(
-    "--binutils",
-    dest="binutils",
-    type=Path,
-    help="path to binutils (optional)",
+    help="path to decomp-toolkit source (optional)",
 )
 parser.add_argument(
     "--sjiswrap",
@@ -112,18 +99,6 @@ parser.add_argument(
     action="store_true",
     help="print verbose output",
 )
-parser.add_argument(
-    "--non-matching",
-    dest="non_matching",
-    action="store_true",
-    help="builds equivalent (but non-matching) or modded objects",
-)
-parser.add_argument(
-    "--no-progress",
-    dest="progress",
-    action="store_false",
-    help="disable progress calculation",
-)
 args = parser.parse_args()
 
 config = ProjectConfig()
@@ -134,27 +109,19 @@ version_num = VERSIONS.index(config.version)
 
 # Apply arguments
 config.build_dir = args.build_dir
-config.dtk_path = args.dtk
-config.objdiff_path = args.objdiff
-config.binutils_path = args.binutils
+config.build_dtk_path = args.build_dtk
 config.compilers_path = args.compilers
+config.debug = args.debug
 config.generate_map = args.map
-config.non_matching = args.non_matching
-config.progress = args.progress
 config.sjiswrap_path = args.sjiswrap
 if not is_windows():
     config.wrapper = args.wrapper
-# Don't build asm unless we're --non-matching
-if not config.non_matching:
-    config.asm_dir = None
 
 # Tool versions
-config.binutils_tag = "2.42-2"
 config.compilers_tag = "20251118"
 config.dtk_tag = "v1.8.3"
-config.objdiff_tag = "v3.6.1"
-config.sjiswrap_tag = "v1.2.2"
-config.wibo_tag = "1.0.3"
+config.sjiswrap_tag = "v1.2.1"
+config.wibo_tag = "0.6.16"
 config.asflags = [
     "-mgekko",
     "--strip-local-absolute",
@@ -172,10 +139,6 @@ config.ldflags = [
     "-nodefaults",
     # "-listclosure", # Uncomment for Wii linkers
 ]
-if args.debug:
-    config.ldflags.append("-g")
-if args.map:
-    config.ldflags.append("-mapunused")
 
 # Base flags, common to most GC/Wii games.
 # Generally leave untouched, with overrides added below.
@@ -208,7 +171,7 @@ cflags_base = [
 ]
 
 # Debug flags
-if args.debug:
+if config.debug:
     cflags_base.extend(["-sym on", "-DDEBUG=1"])
 else:
     cflags_base.append("-DNDEBUG=1")
@@ -352,8 +315,9 @@ config.libs = [
 if args.mode == "configure":
     # Write build.ninja and objdiff.json
     generate_build(config)
+
 elif args.mode == "progress":
-    # Print progress information
+    # Print progress and write progress.json
     config.progress_each_module = args.verbose
     calculate_progress(config)
 else:
